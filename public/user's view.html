@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Inventorial — Scan</title>
+  <style>
+    body { font-family: system-ui,Segoe UI,Roboto,Arial; margin: 24px; }
+    input { padding: 8px; font-size: 18px; }
+    button { padding: 8px 12px; margin-left: 8px; }
+    #log { margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <h1>Inventorial — Quick Scan</h1>
+  <p>Use your scanner or type a code. Quantity default = 1. Use -1 to decrement by 1.</p>
+
+  <div>
+    <input id="sku" placeholder="Scan or type SKU here" autocomplete="off" />
+    <input id="qty" placeholder="qty (default 1)" style="width: 80px;" />
+    <button id="send">Record</button>
+  </div>
+
+  <div id="log"></div>
+
+  <h3>Current inventory (live)</h3>
+  <pre id="inv">loading...</pre>
+
+<script>
+async function send() {
+  const sku = document.getElementById('sku').value.trim();
+  const qtyRaw = document.getElementById('qty').value.trim();
+  const qty = qtyRaw === '' ? 1 : Number(qtyRaw);
+  if (!sku) return alert('scan something');
+
+  const res = await fetch('/api/scan', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ sku, qty })
+  });
+
+  const data = await res.json();
+  document.getElementById('log').innerText = JSON.stringify(data, null, 2);
+  document.getElementById('sku').value = '';
+  document.getElementById('qty').value = '';
+  loadInv();
+}
+
+async function loadInv() {
+  const res = await fetch('/api/inventory');
+  const data = await res.json();
+  document.getElementById('inv').innerText = JSON.stringify(data, null, 2);
+}
+
+document.getElementById('send').addEventListener('click', send);
+document.getElementById('sku').addEventListener('keydown', e => { if(e.key==='Enter'){ send(); } });
+
+loadInv();
+setInterval(loadInv, 3000);
+</script>
+</body>
+</html>
